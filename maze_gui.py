@@ -28,44 +28,44 @@ COSTS = {
 
 MAP = """
 ############################################################
-#         #               #                   #            #
-# ####    ########        #        ######     #            #
-#    #    #               #        #          #            #
-#    ###     #####  ######         #######    ######       #
-#      #   ###   #                    #               ######
-#      #     #   #  #  #   ###        #  #  #              #
-#     #####    #    #  #      #  ######    #######    #### #
-#              #        #######                #      #    #
-# ####    ###       #########      ######      #      ######
-#    #        ##                  #            #           #
-#    ###    ###    ##########     #   ##########    ###### #
-#      #     ###   ##             #            ##          #
-#   ####     #     ##    #######  #   ##########           #
-#             #     #             #   #                    #
-#             ##    ##            #    ######              #
-#              ##     ##                 ##     ########## #
-#      ######   ##     ##      #######    ##      ##       #
-#              ##            ##           ##               #
-############################################################
-#         #               #                  #             #
-#         #               #                   #            #
-# ####    ########        #        ######     #            #
-#    #    #               #        #          #            #
-#    ###     #####  ######         #######    ######       #
-#      #   ###   #                    #               ######
-#      #     #   #  #  #   ###        #  #  #              #
-#     #####    #    #  #      #  ######    #######    #### #
-#              #        #######                #      #    #
-# ####    ###       #########      ######      #      ######
-#    #        ##                  #            #           #
-#    ###    ###    ##########     #   ##########    ###### #
-#      #     ###   ##             #            ##          #
-#   ####     #     ##    #######  #   ##########           #
-#             #     #             #   #                    #
-#             ##    ##            #    ######              #
-#              ##     ##                 ##     ########## #
-#      ######   ##     ##      #######    ##      ##       #
-#              ##            ##           ##               #
+#      #         #                 #         #             #
+# ######   #######   #########  #  #######   #####   #######
+#      #   #     #   #       #  #        #       #         #
+#####  #   ###   #####   # # ######### # #####   ########  #
+#   #      #         #   # #       #         #   #       # #
+# # #######   #####  ##### # #####   ### # ##### # ####  ###
+# # #         #   #      #       #     # #     #   #  #    #
+### ##### ### #   #####  ####### ####### # #####   ## #### #
+#   #     #   #       #  #     # #             # #    #    #
+#   ##### ####### ### ####### # ########### ### ##### #### #
+#       # #     #   #       # #       #     #   #   #      #
+#####   ### ### ##### ##### ##### ##### ######### #### #####
+#   #   #   #     #       #     #   #     #       #      # #
+# ##### ##### ### ########### ### ### ### ##### ##### #### #
+#     #     #     #           #   #   # #     # #   #      #
+# ####### # ##### #### ###### ##### ### ##### # ########## #
+#         #     # #       # #     # #       #       #      #
+####### # # # ### ### ### # ####### ########### ##### ## ###
+#       # # #   #   # #   #     #     #     #     #   #    #
+# ##### # ### ### # # ##### ##### ### ##### ##### ######## #
+# #         #     #       #   #   #   #   # #   #        # #
+# # ####### ##### ####### ##### ##### ### ### ### #### ### #
+#       #   #         #       #     #     #   #     #      #
+####### ### #########  ######## ##### ##### ### ##### #### #
+#       #       #   # #     #         #     #   #   #      #
+# ##### ######### ### # ##### ######### ######### ######## #
+#   #           #   # #       #       #   #       #        #
+### ######### ##### #  ######## ##### ##### ##### ##########
+#       #   #   #   #       #   # #       #   #         #  #
+# ##### # ##### # ##### ### ##### ### ##### ### ######### ##
+#   #   #     # # #     #     #     #   #   #         #    #
+##### ### ##### # ### ##### ### ##### ##### ##### ### ######
+#     # #   #     #       #   # #   # #   #     # # #      #
+# ### # ### ##### ######### ### # ### # ####### ### ########
+# #   #     #     #           #   #   # #           #      #
+# ##### ### # ### ########### ### ### ### ##### ##### #### #
+#   #   # #     #  ##   #     #       #     #   #   #      #
+##  # ### #   # ##   #  ##### ### ##### ##  #   #      ### #
 ############################################################
 """
 
@@ -89,17 +89,48 @@ for x in range(0, M):
 color_coverted = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 pil_image = Image.fromarray(color_coverted)
 
+
 def random_map(height, width, wall_density):
-    # Tạo một bản đồ với viền tường
-    new_map = [["#"] * width for _ in range(height)]
-    # Thay thế các ô bên trong bằng tường hoặc không gian trống dựa vào wall_density
+    # Tạo ma trận toàn đường đi (trống)
+    maze = [[' ' for _ in range(width)] for _ in range(height)]
+
+    # Tạo viền tường xung quanh
+    for i in range(width):
+        maze[0][i] = '#'
+        maze[height - 1][i] = '#'
+    for i in range(height):
+        maze[i][0] = '#'
+        maze[i][width - 1] = '#'
+
+    # Hàm kiểm tra ô hợp lệ
+    def is_valid_move(x, y):
+        return 1 <= x < height - 1 and 1 <= y < width - 1 and maze[x][y] == ' '
+
+    # Đệ quy tạo tường
+    def carve_path(x, y):
+        directions = [(0, 2), (2, 0), (0, -2), (-2, 0)]  # Bước nhảy
+        random.shuffle(directions)  # Xáo trộn để tạo tính ngẫu nhiên
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            wall_x, wall_y = x + dx // 2, y + dy // 2
+            if is_valid_move(nx, ny):
+                # Đặt tường tại ô giữa
+                maze[wall_x][wall_y] = '#'
+                # Đặt tường tại ô tiếp theo
+                maze[nx][ny] = '#'
+                # Tiếp tục đệ quy từ ô tiếp theo
+                carve_path(nx, ny)
+
+    # Bắt đầu từ ô trung tâm
+    carve_path(height // 2, width // 2)
+
     for y in range(1, height - 1):
         for x in range(1, width - 1):
-            if random.random() < wall_density:
-                new_map[y][x] = "#"  # Tạo tường
-            else:
-                new_map[y][x] = " "  # Không gian trống
-    return new_map
+            if maze[y][x] == '#' and random.random() > wall_density:
+                maze[y][x] = ' '  # Xóa tường trong hàng
+
+    return maze
+
 # Class containing the methods to solve the maze
 class MazeSolver(SearchProblem):
     # Initialize the class
@@ -307,12 +338,36 @@ class App(tk.Tk):
                 self.lbl_status.config(text="Không tìm thấy đường đi!")
             else:
                 path = [x[1] for x in result.path()]
-                for i in range(1, len(path)- 1):
-                    x, y = path[i]
-                    self.cvs_me_cung.create_oval(x * W + W // 4, y * W + W // 4, (x + 1) * W - W // 4,(y + 1) * W - W // 4,
-                                                 outline='#ff5555', fill='#ff5555')
-                    time.sleep(0.1)
+                arrow_id = None  # Lưu ID của mũi tên để xóa sau mỗi lần vẽ
+                for i in range(1, len(path)):
+                    # Lấy hai điểm liền kề trong đường đi
+                    x1, y1 = path[i - 1]
+                    x2, y2 = path[i]
+
+                    # Tính tọa độ pixel của hai điểm
+                    x1_pixel, y1_pixel = x1 * W + W // 2, y1 * W + W // 2
+                    x2_pixel, y2_pixel = x2 * W + W // 2, y2 * W + W // 2
+
+                    # Vẽ đường thẳng để lại trên canvas
+                    self.cvs_me_cung.create_line(
+                        x1_pixel, y1_pixel, x2_pixel, y2_pixel,
+                        fill='#ff5555', width=2
+                    )
+
+                    # Vẽ mũi tên đẹp tại vị trí cuối cùng
+                    arrow_id = self.cvs_me_cung.create_line(
+                        x1_pixel, y1_pixel, x2_pixel, y2_pixel,
+                        arrow=tk.LAST, fill='#0000ff', width=3, arrowshape=(15, 20, 5)
+                    )
+
+                    # Cập nhật canvas và tạm dừng
                     self.cvs_me_cung.update()
+                    time.sleep(0.2)
+
+                    # Xóa mũi tên cũ (trừ khi là bước cuối cùng)
+                    if i != len(path) - 1:
+                        self.cvs_me_cung.delete(arrow_id)
+
                 self.lbl_status.config(text="Thành công!")
 
     def btn_reset_click(self):
@@ -364,17 +419,17 @@ class App(tk.Tk):
         self.size = 3
 
     def btn_easy_level_click(self):
-        self.level = 0.2
+        self.level = 0.5
         self.lbl_status.config(text="Chọn mức thành công!")
         self.lbl_level.config(text="Mức đơn giản!")
 
     def btn_medium_level_click(self):
-        self.level = 0.3
+        self.level = 0.8
         self.lbl_status.config(text="Chọn mức thành công!")
         self.lbl_level.config(text="Mức bình thường!")
 
     def btn_hard_level_click(self):
-        self.level = 0.5
+        self.level = 1.0
         self.lbl_status.config(text="Chọn mức thành công!")
         self.lbl_level.config(text="Mức phức tạp!")
 
@@ -410,7 +465,7 @@ class App(tk.Tk):
                 # Vẽ đường đi màu xám
                 self.cvs_me_cung.create_rectangle(x * W + 2, y * W + 2, (x + 1) * W - 2, (y + 1) * W - 2,
                                                   outline='#7f7f7f', fill='#7f7f7f')
-                time.sleep(0.03)
+                time.sleep(0.01)
                 self.cvs_me_cung.update()
             self.lbl_status.config(text="Đã tìm thấy đường đi!")
             self.path_found = True  # Đặt trạng thái tìm thấy đường

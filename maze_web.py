@@ -24,16 +24,45 @@ COSTS = {
 
 # Hàm tạo bản đồ ngẫu nhiên với mật độ tường nhất định
 def random_map(height, width, wall_density):
-    new_map = [["#"] * width for _ in range(height)]
+    # Tạo ma trận toàn đường đi (trống)
+    maze = [[' ' for _ in range(width)] for _ in range(height)]
+
+    # Tạo viền tường xung quanh
+    for i in range(width):
+        maze[0][i] = '#'
+        maze[height - 1][i] = '#'
+    for i in range(height):
+        maze[i][0] = '#'
+        maze[i][width - 1] = '#'
+
+    # Hàm kiểm tra ô hợp lệ
+    def is_valid_move(x, y):
+        return 1 <= x < height - 1 and 1 <= y < width - 1 and maze[x][y] == ' '
+
+    # Đệ quy tạo tường
+    def carve_path(x, y):
+        directions = [(0, 2), (2, 0), (0, -2), (-2, 0)]  # Bước nhảy
+        random.shuffle(directions)  # Xáo trộn để tạo tính ngẫu nhiên
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            wall_x, wall_y = x + dx // 2, y + dy // 2
+            if is_valid_move(nx, ny):
+                # Đặt tường tại ô giữa
+                maze[wall_x][wall_y] = '#'
+                # Đặt tường tại ô tiếp theo
+                maze[nx][ny] = '#'
+                # Tiếp tục đệ quy từ ô tiếp theo
+                carve_path(nx, ny)
+
+    # Bắt đầu từ ô trung tâm
+    carve_path(height // 2, width // 2)
+
     for y in range(1, height - 1):
         for x in range(1, width - 1):
-            if random.random() < wall_density:
-                new_map[y][x] = "#"
-            else:
-                new_map[y][x] = " "
-    new_map[1][1] = " "
-    new_map[height - 2][width -2] = " "
-    return new_map
+            if maze[y][x] == '#' and random.random() > wall_density:
+                maze[y][x] = ' '  # Xóa tường trong hàng
+
+    return maze
 
 
 # Hiển thị mê cung dưới dạng ảnh
@@ -143,7 +172,7 @@ def maze_page():
     # Kích thước và độ phức tạp của bản đồ
     map_size = st.sidebar.selectbox("Chọn kích thước bản đồ", ["10x10", "20x20", "40x40"], index=0,
                                     on_change=on_sidebar_change)
-    wall_density = st.sidebar.slider("Mức độ phức tạp của tường", 0.1, 0.9, 0.3, on_change=on_sidebar_change)
+    wall_density = st.sidebar.slider("Mức độ phức tạp của tường", 0.1, 1.0, 0.3, on_change=on_sidebar_change)
 
     height, width = map(int, map_size.split("x"))
 
